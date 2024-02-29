@@ -9,7 +9,7 @@ nj=15
 stage=0
 stop_stage=100
 
-subsets = ("XL", "L", "M", "S", "XS", "DEV", "TEST")
+subsets=("XL" "L" "M" "S" "XS" "DEV" "TEST")
 
 if [ -z "$1" ]; then
     echo "Usage: $0 <subset>"
