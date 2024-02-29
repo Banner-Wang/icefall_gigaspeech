@@ -8,7 +8,23 @@ set -eou pipefail
 nj=15
 stage=0
 stop_stage=100
-subset=XS # for all available options, refer to https://github.com/lhotse-speech/lhotse/blob/b3373c0d27a23ba0acd516a8e07f12d2ac6deab0/lhotse/recipes/gigaspeech.py#L29
+
+subsets = ("XL", "L", "M", "S", "XS", "DEV", "TEST")
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <subset>"
+    exit 1
+fi
+
+if ! [[ " ${subsets[*]} " =~ " $1 " ]]; then
+    echo "Error: Invalid subset! Must be one of: ${subsets[*]}"
+    exit 1
+fi
+
+subset="$1"
+echo "Subset: ${subset}"
+
+ # for all available options, refer to https://github.com/lhotse-speech/lhotse/blob/b3373c0d27a23ba0acd516a8e07f12d2ac6deab0/lhotse/recipes/gigaspeech.py#L29
 
 # Split XL subset to a number of pieces (about 2000)
 # This is to avoid OOM during feature extraction.
@@ -135,28 +151,28 @@ fi
 if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
   log "State 3: Preprocess GigaSpeech manifest"
   if [ ! -f data/fbank/.preprocess_complete ]; then
-   python3 ./local/preprocess_gigaspeech.py
+   python3 ./local/preprocess_gigaspeech.py --subset ${subset}
    touch data/fbank/.preprocess_complete
   fi
 fi
 
 if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
   log "Stage 4: Compute features for DEV and TEST subsets of GigaSpeech (may take 2 minutes)"
-  python3 ./local/compute_fbank_gigaspeech.py
+  python3 ./local/compute_fbank_gigaspeech.py --subset ${subset}
 fi
 
 if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
   log "Stage 5: Split ${subset} subset into pieces (may take 30 minutes)"
   split_dir=data/fbank/${subset}_split
   if [ ! -f $split_dir/.split_completed ]; then
-    lhotse split-lazy ./data/fbank/cuts_${subset}_raw.jsonl.gz $split_dir $num_per_split
+    lhotse split-lazy ./data/fbank/gigaspeech_cuts_${subset}_raw.jsonl.gz $split_dir $num_per_split
     touch $split_dir/.split_completed
   fi
 fi
 
 if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
   log "Stage 6: Compute features for ${subset}"
-  num_splits=$(find data/fbank/${subset}_split -name "cuts_${subset}_raw.*.jsonl.gz" | wc -l)
+  num_splits=$(find data/fbank/${subset}_split -name "gigaspeech_cuts_${subset}_raw.*.jsonl.gz" | wc -l)
   python3 ./local/compute_fbank_gigaspeech_splits.py \
     --num-workers 20 \
     --batch-duration 600 \
@@ -166,9 +182,9 @@ fi
 
 if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
   log "Stage 7: Combine features for ${subset} (may take 3 hours)"
-  if [ ! -f data/fbank/cuts_${subset}.jsonl.gz ]; then
-    pieces=$(find data/fbank/${subset}_split -name "cuts_${subset}.*.jsonl.gz")
-    lhotse combine $pieces data/fbank/cuts_${subset}.jsonl.gz
+  if [ ! -f data/fbank/gigaspeech_cuts_${subset}.jsonl.gz ]; then
+    pieces=$(find data/fbank/${subset}_split -name "gigaspeech_cuts_${subset}.*.jsonl.gz")
+    lhotse combine $pieces data/fbank/gigaspeech_cuts_${subset}.jsonl.gz
   fi
 fi
 

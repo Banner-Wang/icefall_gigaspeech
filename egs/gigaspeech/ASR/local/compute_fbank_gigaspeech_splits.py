@@ -80,7 +80,7 @@ def get_parser():
         "--subset",
         type=str,
         default="XL",
-        choices=["XL", "L", "M", "S", "XS"],
+        choices=["XL", "L", "M", "S", "XS", "DEV", "TEST"],
         help="Which subset to work with",
     )
 

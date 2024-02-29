@@ -25,19 +25,35 @@ from multiprocessing.reduction import ForkingPickler
 default_collate_func = dataloader.default_collate
 
 
+def get_parser():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument(
+        "--subset",
+        type=str,
+        default="XL",
+        choices=["XL", "L", "M", "S", "XS", "DEV", "TEST"],
+        help="Which subset to work with",
+    )
+    return parser
+
+
 def default_collate_override(batch):
-  dataloader._use_shared_memory = False
-  return default_collate_func(batch)
+    dataloader._use_shared_memory = False
+    return default_collate_func(batch)
+
 
 setattr(dataloader, 'default_collate', default_collate_override)
 
 for t in torch._storage_classes:
-  if sys.version_info[0] == 2:
-    if t in ForkingPickler.dispatch:
-        del ForkingPickler.dispatch[t]
-  else:
-    if t in ForkingPickler._extra_reducers:
-        del ForkingPickler._extra_reducers[t]
+    if sys.version_info[0] == 2:
+        if t in ForkingPickler.dispatch:
+            del ForkingPickler.dispatch[t]
+    else:
+        if t in ForkingPickler._extra_reducers:
+            del ForkingPickler._extra_reducers[t]
 
 import logging
 from pathlib import Path
@@ -53,7 +69,7 @@ torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
 
-def compute_fbank_gigaspeech():
+def compute_fbank_gigaspeech(args):
     in_out_dir = Path("data/fbank")
     # number of workers in dataloader
     num_workers = 20
@@ -61,7 +77,7 @@ def compute_fbank_gigaspeech():
     # number of seconds in a batch
     batch_duration = 1000
 
-    subsets = ("XS",)
+    subsets = [args.subset]
 
     device = torch.device("cpu")
     if torch.cuda.is_available():
@@ -104,8 +120,11 @@ def compute_fbank_gigaspeech():
 def main():
     formatter = "%(asctime)s %(levelname)s [%(filename)s:%(lineno)d] %(message)s"
     logging.basicConfig(format=formatter, level=logging.INFO)
+    parser = get_parser()
+    args = parser.parse_args()
+    logging.info(vars(args))
 
-    compute_fbank_gigaspeech()
+    compute_fbank_gigaspeech(args)
 
 
 if __name__ == "__main__":

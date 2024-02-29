@@ -38,6 +38,14 @@ def get_args():
         help="Whether to use speed perturbation.",
     )
 
+    parser.add_argument(
+        "--subset",
+        type=str,
+        default="XL",
+        choices=["XL", "L", "M", "S", "XS", "DEV", "TEST"],
+        help="Which subset to work with",
+    )
+
     return parser.parse_args()
 
 
@@ -61,15 +69,7 @@ def preprocess_giga_speech(args):
     output_dir = Path("data/fbank")
     output_dir.mkdir(exist_ok=True)
 
-    dataset_parts = (
-    #    "DEV",
-    #    "TEST",
-    #    "XL",
-    #    "L",
-    #    "M",
-    #    "S",
-        "XS",
-    )
+    dataset_parts = (args.subset,)
 
     logging.info("Loading manifest (may take 4 minutes)")
     manifests = read_manifests_if_cached(
@@ -129,6 +129,8 @@ def main():
     logging.basicConfig(format=formatter, level=logging.INFO)
 
     args = get_args()
+    logging.info(vars(args))
+
     preprocess_giga_speech(args)
 
 
