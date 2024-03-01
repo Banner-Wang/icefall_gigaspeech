@@ -6,7 +6,7 @@ export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 set -eou pipefail
 
 nj=15
-stage=0
+stage=-1
 stop_stage=100
 
 subsets=("XL" "L" "M" "S" "XS" "DEV" "TEST")
@@ -208,7 +208,7 @@ if [ $stage -le 9 ] && [ $stop_stage -ge 9 ]; then
   fi
 
   if [ ! -f $lang_dir/transcript_words.txt ]; then
-    gunzip -c "data/manifests/gigaspeech_supervisions_XS.jsonl.gz" \
+    gunzip -c "data/manifests/gigaspeech_supervisions_${subset}.jsonl.gz" \
       | jq '.text' \
       | sed 's/"//g' \
       > $lang_dir/transcript_words.txt
