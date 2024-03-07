@@ -6,7 +6,7 @@ export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 set -eou pipefail
 
 nj=15
-stage=-1
+stage=0
 stop_stage=100
 
 subsets=("XL" "L" "M" "S" "XS" "DEV" "TEST")
